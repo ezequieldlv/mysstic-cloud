@@ -106,13 +106,13 @@ resource "aws_instance" "mysstic_server" {
   ami           = "ami-0e68dc81dc36750a1" # El disco base de Debian 13 (us-east-2)
   instance_type = "t3.micro"              # El tamaño de la máquina (Free Tier)
 
-  # Conectamos el servidor a nuestra fortaleza
+  # Conectamos el servidor a la VPC
   subnet_id                   = aws_subnet.mysstic_public_subnet.id
   vpc_security_group_ids      = [aws_security_group.mysstic_sg.id] # Nota: Esto es una lista []
   associate_public_ip_address = true # Obligamos a AWS a darnos una IP pública
 
   # La llave de acceso (SSH)
-  key_name = "mysstic-key" # ASUMO que este es el nombre de la llave que creaste el domingo
+  key_name = "mysstic-key" 
 
   tags = {
     Name = "mysstic-server-prime"
