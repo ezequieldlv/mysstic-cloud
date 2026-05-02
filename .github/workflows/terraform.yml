@@ -1,0 +1,42 @@
+name: 'MyssTic Warden - Terraform CI/CD'
+
+# 1. EL GATILLO (¿Cuándo corre el robot?)
+on:
+  push:
+    branches:
+      - main # Solo se ejecuta cuando hay cambios en la rama principal
+
+# 2. EL ENTORNO (Inyectando las llaves)
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: 'us-east-2'
+
+# 3. EL TRABAJO (Lo que hace el robot)
+jobs:
+  terraform-deploy:
+    name: 'Terraform Plan & Apply'
+    runs-on: ubuntu-latest # Le pedimos a GitHub que nos preste un servidor Linux
+
+    steps:
+      # Paso A: Clonar tu código en el servidor temporal
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Paso B: Instalar el motor de Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
+
+      # Paso C: Inicializar (Conectar a S3 y DynamoDB)
+      - name: Terraform Init
+        run: terraform init
+
+      # Paso D: Planificar (Verificar qué va a cambiar)
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      # Paso E: Desplegar automáticamente (La magia)
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan

@@ -3,7 +3,8 @@ terraform {
     bucket  = "mysstic-warden-tfstate-ez"         # Nuevo bucket
     key     = "terraform/state/terraform.tfstate" # La "ruta/carpeta" 
     region  = "us-east-2"                         # La región del bucket
-    encrypt = true                                # Encriptación activada
+    encrypt = true           
+    dynamodb_table = "mysstic-terraform-locks"                     # Encriptación activada
   }
 
   required_providers {
@@ -119,7 +120,7 @@ resource "aws_instance" "mysstic_server" {
   }
 }
 
-# 9. LA MAGIA FINAL (Outputs)
+# 9. OUTPUTS
 output "server_public_ip" {
   description = "La IP publica para conectarnos por SSH"
   value       = aws_instance.mysstic_server.public_ip
@@ -146,5 +147,22 @@ resource "aws_s3_bucket_versioning" "mysstic_state_versioning" {
   bucket = aws_s3_bucket.mysstic_terraform_state.id
   versioning_configuration {
     status = "Enabled"
+  }
+}
+
+# 12. EL CANDADO LÓGICO (Tabla DynamoDB para Lock del State)
+resource "aws_dynamodb_table" "terraform_locks" {
+  name         = "mysstic-terraform-locks"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
+
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+
+  tags = {
+    Name        = "mysstic-tf-lock-table"
+    Environment = "DevSecOps"
   }
 }
