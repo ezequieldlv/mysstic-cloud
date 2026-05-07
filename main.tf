@@ -210,7 +210,7 @@ resource "aws_dynamodb_table" "terraform_locks" {
 
 # 13. EL CEREBRO DEL ROBOT (La Política de DLM)
 resource "aws_dlm_lifecycle_policy" "mysstic_backup_policy" {
-  description        = "Backup diario para MyssTic Warden (Retencion 7 dias)"
+  description        = "Backup diario para MyssTic Warden - Retencion 7 dias"
   execution_role_arn = aws_iam_role.dlm_role.arn
   state              = "ENABLED"
 
