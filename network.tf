@@ -88,3 +88,36 @@ resource "aws_security_group" "mysstic_sg" {
   }
   tags = { Name = "mysstic-sg-prime" }
 }
+
+# ==========================================
+# 5. PRIVATE SUBNET 2 (High availability RDS)
+# ==========================================
+resource "aws_subnet" "mysstic_private_subnet_2" {
+  vpc_id                  = aws_vpc.mysstic_vpc.id
+  cidr_block              = "10.0.3.0/24"
+  map_public_ip_on_launch = false        
+  availability_zone       = "us-east-2b"
+
+  tags = {
+    Name = "mysstic-private-subnet-db-2"
+  }
+}
+resource "aws_route_table_association" "mysstic_private_assoc_2" {
+  subnet_id      = aws_subnet.mysstic_private_subnet_2.id
+  route_table_id = aws_route_table.mysstic_private_rt.id
+}
+
+# ==========================================
+# 6. DB SUBNET GROUP
+# ==========================================
+resource "aws_db_subnet_group" "mysstic_db_group" {
+  name       = "mysstic-db-subnet-group"
+  
+  subnet_ids = [
+    aws_subnet.mysstic_private_subnet.id,
+    aws_subnet.mysstic_private_subnet_2.id
+  ]
+  tags = {
+    Name = "mysstic-db-subnet-group"
+  }
+}
