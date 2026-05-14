@@ -20,7 +20,7 @@ resource "aws_secretsmanager_secret_version" "mysstic_db_secret_val" {
   })
 }
 
-# ==========================================
+# ==========================================  
 # 1. RDS SECURITY GROUP
 # ==========================================
 resource "aws_security_group" "mysstic_db_sg" {

@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest # Le pedimos a GitHub que nos preste un servidor Linux
 
     steps:
-      # Paso A: Clonar tu código en el servidor temporal
+      # Paso A: Clonar el código en el servidor temporal
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -36,8 +36,16 @@ jobs:
 
       # Paso D: Planificar (Verificar qué va a cambiar)
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform plan -input=false
+        env:
+          TF_VAR_telegram_token: ${{ secrets.TELEGRAM_TOKEN }}
+          TF_VAR_telegram_chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
 
-      # Paso E: Desplegar automáticamente (La magia)
+      # Paso E: Desplegar automáticamente
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve -input=false
+        env:
+          TF_VAR_telegram_token: ${{ secrets.TELEGRAM_TOKEN }}
+          TF_VAR_telegram_chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}

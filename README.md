@@ -4,19 +4,22 @@
 ![Terraform](https://img.shields.io/badge/IaC-Terraform-5835CC?style=flat-square&logo=terraform)
 ![AWS](https://img.shields.io/badge/Cloud-AWS-FF9900?style=flat-square&logo=amazon-aws)
 ![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-316192?style=flat-square&logo=postgresql)
+![Serverless](https://img.shields.io/badge/Event--Driven-AWS_Lambda-FF9900?style=flat-square&logo=awslambda)
 ![GitOps](https://img.shields.io/badge/Deployment-GitHub_Actions-2088FF?style=flat-square&logo=github-actions)
 
 This repository contains the Infrastructure as Code (IaC) provisioning for the **MyssTic Warden** cloud environment, acting as the AWS backbone and production environment.
 
 ## 🏗️ Architecture & Security (Tier-3 Zero Trust)
 
-Instead of relying on default cloud settings, this infrastructure is built from scratch with strict network boundaries, dynamic secrets, and high availability in mind:
+Instead of relying on default cloud settings, this infrastructure is built from scratch with strict network boundaries, dynamic secrets, high availability, and event-driven observability in mind:
 
 * **Networking (Multi-AZ):** Custom VPC (`10.0.0.0/16`) divided into a Public DMZ (`10.0.1.0/24`) and fully isolated Private Subnets (`10.0.2.0/24`, `10.0.3.0/24`).
 * **Compute:** Debian 13 (Headless) running on a `t3.micro` instance, strictly hardened via UFW.
 * **Persistence:** Amazon RDS (PostgreSQL 16) deployed exclusively within the Private Zone.
 * **Zero Trust Security Groups:** Default-deny inbound traffic. EC2 only allows SSH. The RDS database denies IP-based connections, authenticating traffic cryptographically via the EC2's Security Group identity.
 * **DevSecOps Secrets:** Passwords are never hardcoded. Terraform dynamically generates cryptographic keys, injecting them into **AWS Secrets Manager**.
+* **Event-Driven Observability:** Automated Chaos/Failure detection. **Amazon CloudWatch** monitors EC2 metrics and triggers an **Amazon SNS** topic upon anomalies.
+* **Serverless Alerting:** An **AWS Lambda** function (Python 3.12) subscribes to the SNS topic, processes the incident, and pushes real-time critical alerts to a Telegram Bot via API.
 * **State Management (Enterprise Grade):** Terraform state (`.tfstate`) is strictly managed via a **Remote Backend** using **Amazon S3** (object versioning, AES-256 encryption) and **DynamoDB** for concurrent state locking.
 
 ## 🗺️ Cloud Topology
@@ -30,6 +33,7 @@ graph TD
     classDef compute fill:#16161e,stroke:#9ece6a,stroke-width:2px,color:#c0caf5
     classDef db fill:#336791,stroke:#fff,stroke-width:2px,color:#fff,font-weight:bold
     classDef sec fill:#cc2222,stroke:#fff,stroke-width:2px,color:#fff,font-weight:bold
+    classDef serverless fill:#D18B00,stroke:#fff,stroke-width:2px,color:#fff,font-weight:bold
 
     GitHub((🐙 GitHub Actions)):::cicd -->|CI/CD Pipeline| TF[🟪 Terraform CLI]:::tf
     
@@ -56,7 +60,15 @@ graph TD
             RDS -.-> PrivSub2[🔒 Subnet B 10.0.3.0/24]:::net
             SG2[🛡️ SG: Allow EC2 Only]:::net -.-> RDS
         end
+        
+        subgraph "Event-Driven Observability"
+            EC2 -.->|CPU Metrics| CW((👁️ CloudWatch Alarm)):::aws
+            CW -->|Triggers| SNS[📻 SNS Topic]:::aws
+            SNS -->|Invokes| Lambda[⚡ Lambda Python]:::serverless
+        end
     end
+    
+    Lambda -->|API POST| Telegram((📱 Telegram Bot)):::cicd
 ```
 
 ## 🛠️ Tech Stack
@@ -64,7 +76,8 @@ graph TD
 * **Provisioning:** Terraform (HashiCorp)
 * **Cloud Provider:** AWS (us-east-2)
 * **Database:** Amazon RDS (PostgreSQL)
-* **Security:** AWS Secrets Manager
+* **Serverless:** AWS Lambda, Amazon SNS, CloudWatch
+* **Security:** AWS Secrets Manager, IAM
 * **State Backend:** AWS S3 + DynamoDB
 * **CI/CD:** GitHub Actions
 * **OS:** Debian Linux
@@ -74,7 +87,7 @@ graph TD
 This repository enforces a GitOps workflow. Manual execution of `terraform apply` is deprecated for production environments.
 
 1. **Continuous Deployment:** Any push to the `main` branch triggers the GitHub Actions pipeline.
-2. The pipeline securely authenticates with AWS via injected Repository Secrets.
+2. The pipeline securely authenticates with AWS via injected Repository Secrets (including API Tokens).
 3. It automatically initializes the S3/DynamoDB backend, plans the infrastructure, and applies the changes.
 
 *(For local testing and development only)*:
