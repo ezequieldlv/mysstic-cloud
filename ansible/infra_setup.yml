@@ -1,24 +1,30 @@
 ---
 - name: Aprovisionamiento de Infraestructura Base (Docker + UFW)
   hosts: aws_production
-  become: yes 
+  become: yes # Ejecutar todo como root (sudo)
 
   tasks:
+    # ==========================================
+    # BLOQUE 1: BLINDAJE DE RED (ZERO TRUST BASE)
+    # ==========================================
     - name: Configurar UFW para permitir puertos esenciales
       ansible.builtin.ufw:
         rule: allow
         port: "{{ item }}"
         proto: tcp
       loop:
-        - "22"   
-        - "80"  
-        - "443" 
+        - "22"   # SSH
+        - "80"   # HTTP
+        - "443"  # HTTPS
 
     - name: Activar UFW y denegar todo el tráfico entrante por defecto
       ansible.builtin.ufw:
         state: enabled
         default: deny
 
+    # ==========================================
+    # BLOQUE 2: INSTALACIÓN DE DOCKER (ESTÁNDAR SEGURO)
+    # ==========================================
     - name: Instalar dependencias previas para Docker
       ansible.builtin.apt:
         name:
@@ -29,17 +35,30 @@
         state: present
         update_cache: yes
 
-    - name: Agregar la clave GPG oficial de Docker
-      ansible.builtin.apt_key:
+    - name: Crear directorio para keyrings de APT (Seguridad Moderna)
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Descargar clave GPG oficial de Docker
+      ansible.builtin.get_url:
         url: https://download.docker.com/linux/debian/gpg
-        state: present
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
 
-    - name: Agregar el repositorio oficial de Docker
+    - name: Obtener arquitectura del sistema (amd64 o arm64)
+      ansible.builtin.command: dpkg --print-architecture
+      register: dpkg_arch
+      changed_when: false
+
+    - name: Agregar el repositorio oficial de Docker con firma aislada
       ansible.builtin.apt_repository:
-        repo: "deb https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+        repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
         state: present
+        filename: docker
 
-    - name: Instalar Docker Engine y Docker Compose
+    - name: Instalar Docker Engine y Plugins
       ansible.builtin.apt:
         name:
           - docker-ce
@@ -49,6 +68,8 @@
         state: present
         update_cache: yes
 
+    # ==========================================
+    # BLOQUE 3: CONFIGURACIÓN DE SERVICIOS Y PERMISOS
     # ==========================================
     - name: Asegurar que el servicio de Docker arranque automáticamente
       ansible.builtin.systemd:

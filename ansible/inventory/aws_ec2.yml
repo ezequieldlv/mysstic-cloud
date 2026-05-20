@@ -3,4 +3,4 @@ all:
     aws_production:
       hosts:
         nodo_aws_principal:
-          ansible_host: 18.191.48.63
+          ansible_host: 3.128.206.100
