@@ -7,17 +7,22 @@
     # ==========================================
     # BLOQUE 1: BLINDAJE DE RED (ZERO TRUST BASE)
     # ==========================================
-    - name: Configurar UFW para permitir puertos esenciales
+    - name: Configurar UFW para permitir puertos web publicos
       ansible.builtin.ufw:
         rule: allow
         port: "{{ item }}"
         proto: tcp
       loop:
-        - "22"   # SSH
         - "80"   # HTTP
         - "443"  # HTTPS
 
-    - name: Activar UFW y denegar todo el tráfico entrante por defecto
+    - name: ZERO TRUST - Permitir acceso total desde la VLAN de Tailscale
+      ansible.builtin.ufw:
+        rule: allow
+        interface: tailscale0
+        direction: in
+
+    - name: Activar UFW y denegar todo el trafico entrante por defecto
       ansible.builtin.ufw:
         state: enabled
         default: deny

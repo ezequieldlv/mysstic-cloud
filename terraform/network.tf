@@ -68,14 +68,22 @@ resource "aws_route_table_association" "mysstic_private_assoc" {
 # 4. SECURITY GROUPS
 # ==========================================
 resource "aws_security_group" "mysstic_sg" {
-  name        = "mysstic-allow-ssh"
-  description = "Allow SSH inbound traffic and all outbound traffic"
+  name        = "mysstic-sg-prime"
+  description = "Allow HTTP/HTTPS inbound traffic, SSH exclusively via Tailscale"
   vpc_id      = aws_vpc.mysstic_vpc.id
 
   ingress {
-    description = "SSH from anywhere"
-    from_port   = 22
-    to_port     = 22
+    description = "HTTP from anywhere for Portfolio"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] 
+  }
+
+  ingress {
+    description = "HTTPS from anywhere for Portfolio"
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"] 
   }
