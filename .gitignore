@@ -5,3 +5,6 @@
 # .tfstate files
 *.tfstate
 *.tfstate.*
+
+# Ignorar empaquetados de AWS Lambda
+*.zip

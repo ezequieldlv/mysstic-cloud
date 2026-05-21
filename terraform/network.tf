@@ -94,6 +94,7 @@ resource "aws_security_group" "mysstic_sg" {
     protocol    = "-1" 
     cidr_blocks = ["0.0.0.0/0"]
   }
+
   tags = { Name = "mysstic-sg-prime" }
 }
 

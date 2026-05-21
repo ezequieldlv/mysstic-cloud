@@ -16,4 +16,6 @@
           - htop
           - curl
           - git
+          - postgresql-client
+          - unzip
         state: present 

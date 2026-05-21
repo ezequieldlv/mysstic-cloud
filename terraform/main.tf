@@ -48,34 +48,15 @@ resource "aws_instance" "mysstic_server" {
 
   user_data = <<-EOF
               #!/bin/bash
-              
-              # 1. No GUI
+              # 1. No GUI y evitar prompts interactivos
               export DEBIAN_FRONTEND=noninteractive
               
-              # 2. Force upgrade
+              # 2. Actualización de repositorios e instalación de Python (Requisito de Ansible)
               apt-get update
-              apt-get upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+              apt-get install -y python3 python3-apt
               
-              # 3. basic tools
-              apt-get install -y ca-certificates curl gnupg htop ufw
-              
-              # 4. Firewall
-              ufw allow 22/tcp
-              ufw --force enable
-              
-              # 5. Docker repository
-              install -m 0755 -d /etc/apt/keyrings
-              curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-              chmod a+r /etc/apt/keyrings/docker.gpg
-              echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-              
-              # 6. Docker y PostgreSQL Client installation
-              apt-get update
-              apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin postgresql-client
-              
-              # 7. Auto-start
-              systemctl enable docker
-              systemctl start docker
+              # 3. Marcar el fin del bootstrap
+              echo "Bootstrap de Terraform completado. Esperando a Ansible..." > /var/log/bootstrap_done.txt
               EOF
 }
 

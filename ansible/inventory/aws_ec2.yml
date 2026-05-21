@@ -3,4 +3,4 @@ all:
     aws_production:
       hosts:
         nodo_aws_principal:
-          ansible_host: 16.59.24.140
+          ansible_host: mysstic-warden
