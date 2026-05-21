@@ -58,6 +58,9 @@ resource "aws_instance" "mysstic_server" {
               # 3. Marcar el fin del bootstrap
               echo "Bootstrap de Terraform completado. Esperando a Ansible..." > /var/log/bootstrap_done.txt
               EOF
+  lifecycle {
+    ignore_changes = [user_data] 
+  }
 }
 
 # ==========================================
