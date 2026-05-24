@@ -1,0 +1,30 @@
+# ==========================================
+# ROUTE 53: HOSTED ZONE Y REGISTROS DNS
+# ==========================================
+resource "aws_route53_zone" "mysstic_zone" {
+  name = "ez-lab.site"
+  tags = {
+    Name = "mysstic-dns-zone"
+  }
+}
+
+resource "aws_route53_record" "portfolio_root" {
+  zone_id = aws_route53_zone.mysstic_zone.zone_id
+  name    = "ez-lab.site"
+  type    = "A"
+  ttl     = "300"
+  records = [aws_instance.mysstic_server.public_ip]
+}
+
+resource "aws_route53_record" "portfolio_wildcard" {
+  zone_id = aws_route53_zone.mysstic_zone.zone_id
+  name    = "*.ez-lab.site"
+  type    = "CNAME"
+  ttl     = "300"
+  records = ["ez-lab.site"]
+}
+
+output "route53_nameservers" {
+  description = "Name Servers de AWS."
+  value       = aws_route53_zone.mysstic_zone.name_servers
+}

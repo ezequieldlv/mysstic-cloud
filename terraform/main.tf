@@ -22,8 +22,8 @@ provider "aws" {
 # 1. COMPUTE (EC2 Instance)
 # ==========================================
 resource "aws_instance" "mysstic_server" {
-  ami                         = "ami-0e68dc81dc36750a1" 
-  instance_type               = "t3.micro"              
+  ami                         = "ami-0ecbd2e35f5b231f2" 
+  instance_type               = "t4g.micro"
   iam_instance_profile        = aws_iam_instance_profile.mysstic_ec2_profile.name
   subnet_id                   = aws_subnet.mysstic_public_subnet.id
   vpc_security_group_ids      = [aws_security_group.mysstic_sg.id] 
@@ -32,13 +32,9 @@ resource "aws_instance" "mysstic_server" {
 
   root_block_device {
     volume_size           = 8           
-    volume_type           = "gp3"       
+    volume_type           = "gp2" # FINOPS       
     encrypted             = true        
     delete_on_termination = true        
-  }
-
-  instance_market_options {
-    market_type = "spot"
   }
 
   tags = {
@@ -48,19 +44,21 @@ resource "aws_instance" "mysstic_server" {
 
   user_data = <<-EOF
               #!/bin/bash
-              # 1. No GUI y evitar prompts interactivos
               export DEBIAN_FRONTEND=noninteractive
               
-              # 2. Actualización de repositorios e instalación de Python (Requisito de Ansible)
-              apt-get update
-              apt-get install -y python3 python3-apt
+              # 1. Habilitar IP Forwarding en el Kernel (Requisito para Exit Node)
+              echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf
+              echo 'net.ipv6.conf.all.forwarding = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf
+              sudo sysctl -p /etc/sysctl.d/99-tailscale.conf
               
-              # 3. Marcar el fin del bootstrap
-              echo "Bootstrap de Terraform completado. Esperando a Ansible..." > /var/log/bootstrap_done.txt
+              # 2. Instalar dependencias base
+              sudo apt-get update
+              sudo apt-get install -y python3 python3-apt curl
+              
+              # 3. Instalar y Levantar Tailscale
+              curl -fsSL https://tailscale.com/install.sh | sh
+              sudo tailscale up --authkey=${var.tailscale_auth_key} --ssh --advertise-exit-node
               EOF
-  lifecycle {
-    ignore_changes = [user_data] 
-  }
 }
 
 # ==========================================

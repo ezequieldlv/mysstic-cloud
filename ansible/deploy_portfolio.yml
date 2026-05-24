@@ -1,0 +1,25 @@
+---
+- name: Desplegar Infraestructura Web (Traefik + Portfolio)
+  hosts: aws_production
+  become: yes
+
+  tasks:
+    - name: Crear directorio para la infraestructura web
+      ansible.builtin.file:
+        path: /opt/infra-web
+        state: directory
+        mode: '0755'
+        owner: admin
+        group: docker
+
+    - name: Copiar docker-compose.yml al servidor
+      ansible.builtin.copy:
+        src: files/portfolio/docker-compose.yml
+        dest: /opt/infra-web/docker-compose.yml
+        mode: '0644'
+
+    - name: Levantar los contenedores con Docker Compose
+      community.docker.docker_compose_v2:
+        project_src: /opt/infra-web
+        state: present
+        pull: always

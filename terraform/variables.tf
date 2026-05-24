@@ -9,3 +9,9 @@ variable "telegram_chat_id" {
   type        = string
   sensitive   = true
 }
+
+variable "tailscale_auth_key" {
+  description = "Auth Key de Tailscale"
+  type        = string
+  sensitive   = true
+}

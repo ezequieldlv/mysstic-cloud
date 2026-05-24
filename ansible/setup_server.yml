@@ -18,4 +18,5 @@
           - git
           - postgresql-client
           - unzip
+          - ufw
         state: present 
