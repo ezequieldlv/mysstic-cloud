@@ -8,3 +8,6 @@
 
 # Ignorar empaquetados de AWS Lambda
 *.zip
+
+# Ignorar secretos
+secret.tfvars

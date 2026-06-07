@@ -1,0 +1,18 @@
+---
+- name: Configurar UFW puertos publicos
+  ansible.builtin.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop: ["80", "443"]
+
+- name: Permitir acceso total desde Tailscale
+  ansible.builtin.ufw:
+    rule: allow
+    interface: tailscale0
+    direction: in
+
+- name: Activar UFW y denegar trafico entrante
+  ansible.builtin.ufw:
+    state: enabled
+    default: deny

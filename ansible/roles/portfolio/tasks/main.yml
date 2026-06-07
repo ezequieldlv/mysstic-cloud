@@ -1,0 +1,20 @@
+---
+- name: Crear directorio de la app
+  ansible.builtin.file:
+    path: /opt/infra-web
+    state: directory
+    owner: admin
+    group: docker
+    mode: '0755'
+
+- name: Copiar compose al servidor
+  ansible.builtin.copy:
+    src: docker-compose.yml
+    dest: /opt/infra-web/docker-compose.yml
+    mode: '0644'
+
+- name: Desplegar contenedores (Traefik SSL Automático)
+  community.docker.docker_compose_v2:
+    project_src: /opt/infra-web
+    state: present
+    pull: always

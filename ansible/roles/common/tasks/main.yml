@@ -1,0 +1,10 @@
+---
+- name: Actualizar cache de apt
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Instalar utilidades basicas
+  ansible.builtin.apt:
+    name: [htop, curl, git, postgresql-client, unzip, ufw]
+    state: present

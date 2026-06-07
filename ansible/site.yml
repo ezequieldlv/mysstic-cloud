@@ -1,0 +1,9 @@
+---
+- name: Aprovisionamiento de MyssTic Warden Node
+  hosts: aws_production
+  become: true
+  roles:
+    - common
+    - security
+    - docker
+    - portfolio

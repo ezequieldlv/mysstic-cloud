@@ -1,0 +1,61 @@
+services:
+  # =========================================
+  # TRAEFIK (El Proxy Dinámico)
+  # =========================================
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    restart: unless-stopped
+    environment:
+      - DOCKER_API_VERSION=1.41
+    command:
+      - "--api.insecure=false" 
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false" 
+      
+      - "--entrypoints.web.address=:80"        
+      - "--entrypoints.websecure.address=:443"
+
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=ezequiel2014.edlv@gmail.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
+
+  # =========================================
+  # BACKEND (La API)
+  # =========================================
+  backend-portfolio:
+    image: ghcr.io/ezequieldlv/ez-backend:latest
+    container_name: backend-portfolio
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true" 
+      
+      - "traefik.http.routers.backend.rule=Host(`api.ez-lab.site`)"
+      - "traefik.http.routers.backend.entrypoints=websecure" 
+      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.backend.loadbalancer.server.port=8585"
+
+  # =========================================
+  # FRONTEND (La Web Visible)
+  # =========================================
+  frontend-portfolio:
+    image: ghcr.io/ezequieldlv/ez-frontend:latest
+    container_name: frontend-portfolio
+    restart: unless-stopped
+    depends_on:
+      - backend-portfolio 
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`ez-lab.site`) || Host(`www.ez-lab.site`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"

@@ -11,12 +11,12 @@ This repository contains the Infrastructure as Code (IaC) provisioning for the *
 
 ## 🏗️ Architecture & Security (Tier-3 Zero Trust)
 
-Instead of relying on default cloud settings, this infrastructure is built from scratch with strict network boundaries, dynamic secrets, high availability, and event-driven observability in mind:
+The infrastructure is strictly modularized (Networking, Compute, Database, Monitoring, DNS) and built from scratch with strict network boundaries, dynamic secrets, and event-driven observability:
 
-* **Networking (Multi-AZ):** Custom VPC (`10.0.0.0/16`) divided into a Public DMZ (`10.0.1.0/24`) and fully isolated Private Subnets (`10.0.2.0/24`, `10.0.3.0/24`).
-* **Compute:** Debian 13 (Headless) running on a `t3.micro` instance, strictly hardened via UFW.
+* **Networking (Multi-AZ):** Custom VPC (`10.0.0.0/16`) divided into a Public DMZ (`10.0.1.0/24`) and fully isolated Private Subnets (`10.0.2.0/24`, `10.0.3.0/24`).DNS is managed natively via Amazon Route 53.
+* **Compute:** Debian Linux running on an ARM64 Graviton instance (t4g.micro), strictly hardened via UFW and connected to a private Mesh VPN using Tailscale.
 * **Persistence:** Amazon RDS (PostgreSQL 16) deployed exclusively within the Private Zone.
-* **Zero Trust Security Groups:** Default-deny inbound traffic. EC2 only allows SSH. The RDS database denies IP-based connections, authenticating traffic cryptographically via the EC2's Security Group identity.
+* **Zero Trust Security Groups:** Default-deny inbound traffic. EC2 only allows HTTP/HTTPS. The RDS database denies IP-based connections, authenticating traffic cryptographically via the EC2's Security Group identity.
 * **DevSecOps Secrets:** Passwords are never hardcoded. Terraform dynamically generates cryptographic keys, injecting them into **AWS Secrets Manager**.
 * **Event-Driven Observability:** Automated Chaos/Failure detection. **Amazon CloudWatch** monitors EC2 metrics and triggers an **Amazon SNS** topic upon anomalies.
 * **Serverless Alerting:** An **AWS Lambda** function (Python 3.12) subscribes to the SNS topic, processes the incident, and pushes real-time critical alerts to a Telegram Bot via API.
@@ -46,19 +46,20 @@ graph TD
     TF -->|Generates Password| Vault[🔐 AWS Secrets Manager]:::sec
 
     subgraph "AWS us-east-2 Ohio"
+        Route53((🌐 Route 53)):::aws --> IGW
         VPC --> IGW[🚪 Internet Gateway]:::net
         
         subgraph "Public Zone (DMZ)"
             IGW --> PubSub[🌐 Public Subnet 10.0.1.0/24]:::net
-            PubSub --> EC2[🖥️ Debian 13 t3.micro]:::compute
-            PubSub --> SG1[🛡️ SG: Allow SSH]:::net
+            PubSub --> EC2[🖥️ t4g.micro Graviton]:::compute
+            PubSub --> SG1[🛡️ SG: HTTP/HTTPS]:::net
         end
 
         subgraph "Private Zone (The Vault)"
             EC2 -->|Port 5432 / SG Auth| RDS[(🐘 RDS PostgreSQL)]:::db
             RDS -.-> PrivSub1[🔒 Subnet A 10.0.2.0/24]:::net
             RDS -.-> PrivSub2[🔒 Subnet B 10.0.3.0/24]:::net
-            SG2[🛡️ SG: Allow EC2 Only]:::net -.-> RDS
+            SG2[🛡️ SG: EC2 Identity Only]:::net -.-> RDS
         end
         
         subgraph "Event-Driven Observability"
@@ -73,11 +74,12 @@ graph TD
 
 ## 🛠️ Tech Stack
 
-* **Provisioning:** Terraform (HashiCorp)
+* **Provisioning:** Terraform (HashiCorp) - Modular Architecture
+* **Config Management:** Ansible (Roles structure)
 * **Cloud Provider:** AWS (us-east-2)
 * **Database:** Amazon RDS (PostgreSQL)
 * **Serverless:** AWS Lambda, Amazon SNS, CloudWatch
-* **Security:** AWS Secrets Manager, IAM
+* **Security:** AWS Secrets Manager, IAM, Tailscale VPN
 * **State Backend:** AWS S3 + DynamoDB
 * **CI/CD:** GitHub Actions
 * **OS:** Debian Linux
@@ -93,11 +95,11 @@ This repository enforces a GitOps workflow. Manual execution of `terraform apply
 *(For local testing and development only)*:
 ```bash
 terraform init
-terraform plan
-terraform apply
+terraform plan -var-file="secret.tfvars"
+terraform apply -var-file="secret.tfvars"
 ```
 
-> **Note:** The `terraform.tfstate` is excluded via `.gitignore` to prevent secret leakage. The absolute source of truth remains securely in AWS.
+> **Note:** The secret.tfvars and .tfstate files are strictly excluded via .gitignore to prevent secret leakage. The absolute source of truth remains securely in AWS.
 
 ---
 *Maintained by MyssTic Warden Cloud Operations.*
