@@ -92,7 +92,7 @@ resource "aws_instance" "server" {
               sudo apt-get update
               sudo apt-get install -y python3 python3-apt curl
               curl -fsSL https://tailscale.com/install.sh | sh
-              sudo tailscale up --authkey=${var.tailscale_auth_key} --ssh --advertise-exit-node
+              sudo tailscale up --authkey=${var.tailscale_auth_key} --hostname=mysstic-warden --ssh --advertise-exit-node
               EOF
 }
 

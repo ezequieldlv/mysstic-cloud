@@ -1,0 +1,43 @@
+name: CI SecOps - MyssTic Cloud IaC
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  id-token: write   
+  contents: read    
+
+jobs:
+  security-and-linting:
+    name: Escaneo Zero-Trust y Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 1. Clonar el repositorio
+        uses: actions/checkout@v4
+
+      - name: 2. Autenticación Zero-Trust en AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::528733131843:role/mysstic-github-actions-role
+          aws-region: us-east-2
+
+      - name: 3. Escaneo de Secretos (Trufflehog)
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ""
+          head: ${{ github.sha }}
+          extra_args: --debug --only-verified
+
+      - name: 4. Auditoría IaC (Checkov)
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: terraform
+          soft_fail: false
