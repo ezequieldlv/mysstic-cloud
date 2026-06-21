@@ -68,6 +68,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: 4. Terraform Init & Apply (Infraestructura inmutable)
+        working-directory: ./terraform
         run: |
           terraform init
           terraform apply -auto-approve
