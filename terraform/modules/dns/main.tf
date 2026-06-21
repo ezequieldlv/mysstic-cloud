@@ -1,5 +1,6 @@
 resource "aws_route53_zone" "main" {
 # checkov:skip=CKV2_AWS_39: "DNS query logging omitido por costos (FinOps)"
+# checkov:skip=CKV2_AWS_38: "DNSSEC requiere KMS de pago, omitido por FinOps"
 
   name = var.domain_name
   tags = { Name = "mysstic-dns-zone" }

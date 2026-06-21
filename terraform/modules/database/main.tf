@@ -69,6 +69,7 @@ resource "aws_db_instance" "postgres" {
 # checkov:skip=CKV_AWS_161: "IAM Auth no requerida para el portfolio"
 # checkov:skip=CKV_AWS_353: "Performance insights omitido (FinOps)"
 # checkov:skip=CKV2_AWS_30: "Query logging omitido (FinOps)"
+# checkov:skip=CKV2_AWS_60: "Snapshots deshabilitados por FinOps, no hay tags que copiar"
 
   identifier             = "${var.project_name}-db"
   engine                 = "postgres"
