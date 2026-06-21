@@ -31,8 +31,9 @@ resource "aws_iam_role" "github_actions_role" {
   })
 }
 
-# checkov:skip=CKV_AWS_274: "AdminAccess temporal para bootstrapping. Protegido por OIDC estricto"
 resource "aws_iam_role_policy_attachment" "github_actions_admin_attach" {
+# checkov:skip=CKV_AWS_274: "AdminAccess temporal para bootstrapping. Protegido por OIDC estricto"
+
   role       = aws_iam_role.github_actions_role.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }

@@ -30,10 +30,11 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 # ==========================================
 # 2. SECURITY GROUP
 # ==========================================
+resource "aws_security_group" "ec2_sg" {
 # checkov:skip=CKV_AWS_260: "Traefik necesita puerto 80 global"
 # checkov:skip=CKV_AWS_382: "Salida global requerida para descargas apt/docker"
 # checkov:skip=CKV_AWS_23: "Descripcion omitida por simplicidad"
-resource "aws_security_group" "ec2_sg" {
+
   name        = "${var.project_name}-ec2-sg"
   description = "Permitir HTTP/HTTPS entrante"
   vpc_id      = var.vpc_id
@@ -65,11 +66,12 @@ resource "aws_security_group" "ec2_sg" {
 # ==========================================
 # 3. EC2 INSTANCE
 # ==========================================
+resource "aws_instance" "server" {
 # checkov:skip=CKV_AWS_88: "Requiere IP publica por ausencia de ALB (FinOps)"
 # checkov:skip=CKV_AWS_135: "EBS Optimized no es mandatorio en t4g.micro"
 # checkov:skip=CKV_AWS_126: "Detailed monitoring cuesta dinero, usamos metricas basicas"
 # checkov:skip=CKV_AWS_79: "IMDSv2 se implementara en Fase 10"
-resource "aws_instance" "server" {
+
   ami                         = "ami-0ecbd2e35f5b231f2" 
   instance_type               = "t4g.micro"
   iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name

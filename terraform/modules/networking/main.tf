@@ -1,10 +1,11 @@
 # ==========================================
 # 1. VPC & INTERNET GATEWAY
 # ==========================================
+resource "aws_vpc" "main" {
 # checkov:skip=CKV_AWS_163: "VPC Flow Logs desactivados por costos (FinOps)"
 # checkov:skip=CKV2_AWS_11: "Flow Logs desactivados (FinOps)"
 # checkov:skip=CKV2_AWS_5: "Default Security Group se manejara en Fase 10"
-resource "aws_vpc" "main" {
+
   cidr_block           = var.vpc_cidr 
   enable_dns_support   = true 
   enable_dns_hostnames = true 
