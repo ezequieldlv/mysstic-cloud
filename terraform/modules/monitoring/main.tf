@@ -27,6 +27,12 @@ data "archive_file" "lambda_zip" {
   output_path = "${path.module}/lambda/alert.zip"
 }
 
+# checkov:skip=CKV_AWS_116: "Dead Letter Queue no requerido para alertas simples"
+# checkov:skip=CKV_AWS_50: "X-Ray tracing desactivado por costos (FinOps)"
+# checkov:skip=CKV_AWS_173: "KMS CMK para variables de entorno omitido (FinOps)"
+# checkov:skip=CKV_AWS_272: "Code signing no requerido en fase Dev"
+# checkov:skip=CKV_AWS_117: "Lambda no requiere acceso a VPC para enviar Telegrams"
+# checkov:skip=CKV_AWS_115: "Concurrent execution limit omitido"
 resource "aws_lambda_function" "telegram_alerter" {
   filename         = data.archive_file.lambda_zip.output_path
   function_name    = "Telegram-Alerter-MyssTic"

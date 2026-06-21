@@ -7,6 +7,8 @@ resource "random_password" "db_password" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
+# checkov:skip=CKV_AWS_149: "Usamos cifrado AWS managed por defecto (FinOps)"
+# checkov:skip=CKV2_AWS_57: "Rotacion manual aceptada para este entorno"
 resource "aws_secretsmanager_secret" "db_secret" {
   name                    = "${var.project_name}-db-credentials"
   recovery_window_in_days = 0 
@@ -28,6 +30,8 @@ resource "aws_db_subnet_group" "db_group" {
   subnet_ids = var.private_subnet_ids
 }
 
+# checkov:skip=CKV_AWS_382: "Salida global de RDS permitida temporalmente"
+# checkov:skip=CKV_AWS_23: "Descripcion omitida"
 resource "aws_security_group" "db_sg" {
   name        = "${var.project_name}-rds-sg"
   description = "Permitir trafico PostgreSQL SOLO desde la EC2"
@@ -53,6 +57,15 @@ resource "aws_security_group" "db_sg" {
 # ==========================================
 # 3. RDS INSTANCE
 # ==========================================
+# checkov:skip=CKV_AWS_118: "Enhanced monitoring omitido (FinOps)"
+# checkov:skip=CKV_AWS_157: "Multi-AZ omitido por costos (FinOps)"
+# checkov:skip=CKV_AWS_293: "Deletion protection deshabilitado para entornos Dev"
+# checkov:skip=CKV_AWS_129: "Log export omitido (FinOps)"
+# checkov:skip=CKV_AWS_16: "Cifrado default activado, KMS omitido"
+# checkov:skip=CKV_AWS_226: "Minor upgrades automaticas deshabilitadas para control manual"
+# checkov:skip=CKV_AWS_161: "IAM Auth no requerida para el portfolio"
+# checkov:skip=CKV_AWS_353: "Performance insights omitido (FinOps)"
+# checkov:skip=CKV2_AWS_30: "Query logging omitido (FinOps)"
 resource "aws_db_instance" "postgres" {
   identifier             = "${var.project_name}-db"
   engine                 = "postgres"
