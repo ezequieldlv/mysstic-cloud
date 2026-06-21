@@ -83,6 +83,7 @@ jobs:
       - name: 6. Conectar GitHub Runner a VPN Tailscale Zero-Trust
         uses: tailscale/github-action@v2
         with:
+          version: "1.98.4"
           oauth-client-id: "" 
           oauth-secret: "" 
           authkey: ${{ env.TS_AUTHKEY }}
