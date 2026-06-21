@@ -54,6 +54,8 @@ resource "aws_lambda_function" "telegram_alerter" {
 # 3. SNS TOPIC & CLOUDWATCH
 # ==========================================
 resource "aws_sns_topic" "alerts" {
+# checkov:skip=CKV_AWS_26: "SNS topic solo maneja metricas de CPU no sensibles. KMS omitido (FinOps)"
+
   name = "mysstic-alerts-topic"
 }
 
