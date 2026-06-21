@@ -30,7 +30,7 @@ module "compute" {
   vpc_id             = module.networking.vpc_id
   public_subnet_id   = module.networking.public_subnet_id
   project_name       = "mysstic"
-  tailscale_auth_key = var.tailscale_auth_key
+  tailscale_auth_key = local.core_secrets["tailscale_auth_key"]
 }
 
 module "database" {
@@ -49,7 +49,7 @@ module "dns" {
 
 module "monitoring" {
   source           = "./modules/monitoring"
-  telegram_token   = var.telegram_token
-  telegram_chat_id = var.telegram_chat_id
+  telegram_token   = local.core_secrets["telegram_bot_token"]
+  telegram_chat_id = local.core_secrets["telegram_chat_id"]
   ec2_instance_id  = module.compute.ec2_instance_id
 }
