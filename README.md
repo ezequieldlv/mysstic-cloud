@@ -4,23 +4,25 @@
 ![Terraform](https://img.shields.io/badge/IaC-Terraform-5835CC?style=flat-square&logo=terraform)
 ![AWS](https://img.shields.io/badge/Cloud-AWS-FF9900?style=flat-square&logo=amazon-aws)
 ![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-316192?style=flat-square&logo=postgresql)
-![Serverless](https://img.shields.io/badge/Event--Driven-AWS_Lambda-FF9900?style=flat-square&logo=awslambda)
+![Ansible](https://img.shields.io/badge/Config-Ansible-EE0000?style=flat-square&logo=ansible)
 ![GitOps](https://img.shields.io/badge/Deployment-GitHub_Actions-2088FF?style=flat-square&logo=github-actions)
+![ZeroTrust](https://img.shields.io/badge/Security-Zero_Trust-black?style=flat-square)
 
-This repository contains the Infrastructure as Code (IaC) provisioning for the **MyssTic Warden** cloud environment, acting as the AWS backbone and production environment.
+This repository contains the Infrastructure as Code (IaC) and Configuration Management provisioning for the **MyssTic Warden** cloud environment, acting as the AWS backbone and production environment.
 
-## 🏗️ Architecture & Security (Tier-3 Zero Trust)
+## 🏗️ Architecture & Security (Tier-3 Zero Trust & Shift-Left)
 
-The infrastructure is strictly modularized (Networking, Compute, Database, Monitoring, DNS) and built from scratch with strict network boundaries, dynamic secrets, and event-driven observability:
+The infrastructure is strictly modularized (Networking, Compute, Database, Monitoring, DNS) and built from scratch with strict network boundaries, dynamic secrets, and automated security gates:
 
-* **Networking (Multi-AZ):** Custom VPC (`10.0.0.0/16`) divided into a Public DMZ (`10.0.1.0/24`) and fully isolated Private Subnets (`10.0.2.0/24`, `10.0.3.0/24`).DNS is managed natively via Amazon Route 53.
-* **Compute:** Debian Linux running on an ARM64 Graviton instance (t4g.micro), strictly hardened via UFW and connected to a private Mesh VPN using Tailscale.
+* **Shift-Left Security & OIDC:** The CI/CD pipeline authenticates with AWS via **OpenID Connect (OIDC)**, eliminating static credentials. Every push is audited by **Trufflehog** (secret scanning) and **Checkov** (IaC compliance) before deployment.
+* **Networking (Multi-AZ):** Custom VPC (`10.0.0.0/16`) divided into a Public DMZ (`10.0.1.0/24`) and fully isolated Private Subnets (`10.0.2.0/24`, `10.0.3.0/24`). DNS is managed natively via Amazon Route 53.
+* **Compute & Config Management:** Debian Linux running on an ARM64 Graviton instance (t4g.micro). Configuration is fully automated via **Ansible Enterprise Roles** (Docker, Traefik, Apps).
+* **Zero Trust VPN & Deployment:** EC2 does not expose SSH (Port 22) to the internet. The GitHub Actions runner dynamically joins the **Tailscale** private network using an ephemeral AuthKey and executes Ansible playbooks securely via the internal Tailnet.
 * **Persistence:** Amazon RDS (PostgreSQL 16) deployed exclusively within the Private Zone.
 * **Zero Trust Security Groups:** Default-deny inbound traffic. EC2 only allows HTTP/HTTPS. The RDS database denies IP-based connections, authenticating traffic cryptographically via the EC2's Security Group identity.
-* **DevSecOps Secrets:** Passwords are never hardcoded. Terraform dynamically generates cryptographic keys, injecting them into **AWS Secrets Manager**.
-* **Event-Driven Observability:** Automated Chaos/Failure detection. **Amazon CloudWatch** monitors EC2 metrics and triggers an **Amazon SNS** topic upon anomalies.
-* **Serverless Alerting:** An **AWS Lambda** function (Python 3.12) subscribes to the SNS topic, processes the incident, and pushes real-time critical alerts to a Telegram Bot via API.
-* **State Management (Enterprise Grade):** Terraform state (`.tfstate`) is strictly managed via a **Remote Backend** using **Amazon S3** (object versioning, AES-256 encryption) and **DynamoDB** for concurrent state locking.
+* **Dynamic Secrets:** Passwords and tokens are never hardcoded or stored locally. Terraform extracts keys dynamically from **AWS Secrets Manager** at runtime.
+* **Event-Driven Observability:** Automated Chaos/Failure detection. **Amazon CloudWatch** monitors EC2 metrics and triggers an **Amazon SNS** topic. An **AWS Lambda** function pushes real-time critical alerts to a Telegram Bot.
+* **State Management:** Terraform state (`.tfstate`) is strictly managed via a **Remote Backend** using **Amazon S3** (AES-256 encryption) and **DynamoDB** for concurrent state locking.
 
 ## 🗺️ Cloud Topology
 
@@ -35,7 +37,10 @@ graph TD
     classDef sec fill:#cc2222,stroke:#fff,stroke-width:2px,color:#fff,font-weight:bold
     classDef serverless fill:#D18B00,stroke:#fff,stroke-width:2px,color:#fff,font-weight:bold
 
-    GitHub((🐙 GitHub Actions)):::cicd -->|CI/CD Pipeline| TF[🟪 Terraform CLI]:::tf
+    GitHub((🐙 GitHub Actions)):::cicd -->|1. OIDC Auth| IAM[AWS IAM Role]:::sec
+    GitHub -->|2. Shift-Left| SecGates[Trufflehog & Checkov]:::sec
+    SecGates -->|3. CD Pipeline| TF[🟪 Terraform CLI]:::tf
+    SecGates -->|4. Config| Ansible[🟥 Ansible Playbooks]:::cicd
     
     subgraph "Terraform Remote Backend"
         TF -.->|State Lock Mutex| Dynamo[(⚡ DynamoDB Table)]:::aws
@@ -43,7 +48,7 @@ graph TD
     end
 
     TF -->|Provisions via API| VPC[☁️ AWS Custom VPC 10.0.0.0/16]:::net
-    TF -->|Generates Password| Vault[🔐 AWS Secrets Manager]:::sec
+    TF -->|Extracts Dynamic Keys| Vault[🔐 AWS Secrets Manager]:::sec
 
     subgraph "AWS us-east-2 Ohio"
         Route53((🌐 Route 53)):::aws --> IGW
@@ -69,6 +74,7 @@ graph TD
         end
     end
     
+    Ansible -.->|Tailscale SSH| EC2
     Lambda -->|API POST| Telegram((📱 Telegram Bot)):::cicd
 ```
 
@@ -79,27 +85,19 @@ graph TD
 * **Cloud Provider:** AWS (us-east-2)
 * **Database:** Amazon RDS (PostgreSQL)
 * **Serverless:** AWS Lambda, Amazon SNS, CloudWatch
-* **Security:** AWS Secrets Manager, IAM, Tailscale VPN
+* **Security:** AWS Secrets Manager, IAM OIDC, Tailscale VPN, Checkov, Trufflehog
 * **State Backend:** AWS S3 + DynamoDB
 * **CI/CD:** GitHub Actions
 * **OS:** Debian Linux
 
-## 🚀 Deployment Workflow (GitOps)
+## 🚀 Deployment Workflow (Continuous Deployment)
 
-This repository enforces a GitOps workflow. Manual execution of `terraform apply` is deprecated for production environments.
+This repository enforces a strict GitOps workflow. Manual execution of `terraform apply` with local variables is deprecated.
 
-1. **Continuous Deployment:** Any push to the `main` branch triggers the GitHub Actions pipeline.
-2. The pipeline securely authenticates with AWS via injected Repository Secrets (including API Tokens).
-3. It automatically initializes the S3/DynamoDB backend, plans the infrastructure, and applies the changes.
-
-*(For local testing and development only)*:
-```bash
-terraform init
-terraform plan -var-file="secret.tfvars"
-terraform apply -var-file="secret.tfvars"
-```
-
-> **Note:** The secret.tfvars and .tfstate files are strictly excluded via .gitignore to prevent secret leakage. The absolute source of truth remains securely in AWS.
+1. **Security Gates:** Any push/PR triggers Trufflehog (secret scanning) and Checkov (IaC static analysis).
+2. **Zero-Trust Auth:** The pipeline securely authenticates with AWS via OpenID Connect (OIDC), assuming a temporary IAM role.
+3. **Immutable Provisioning:** Terraform initializes the remote backend, fetches dynamic secrets from AWS Secrets Manager in memory, and applies infrastructure changes.
+4. **Configuration Delivery:** Post-provisioning, the GitHub Runner joins the private Tailnet using an ephemeral AuthKey and executes Ansible playbooks securely via SSH without exposing port 22.
 
 ---
 *Maintained by MyssTic Warden Cloud Operations.*
