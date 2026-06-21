@@ -87,7 +87,7 @@ jobs:
           oauth-client-id: "" 
           oauth-secret: "" 
           authkey: ${{ env.TS_AUTHKEY }}
-          tags: tag:prod
+          tags: tag:mysstic
 
       - name: 7. Esperar inicialización del SO (Evitar Race Condition)
         run: |
@@ -98,4 +98,5 @@ jobs:
       - name: 8. Ejecutar Ansible Playbook vía Tailscale SSH
         run: |
           export ANSIBLE_HOST_KEY_CHECKING=False
+          export ANSIBLE_REMOTE_USER=admin
           ansible-playbook -i ansible/inventory/aws_ec2.yml ansible/site.yml
