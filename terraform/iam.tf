@@ -1,8 +1,8 @@
 
 resource "aws_iam_openid_connect_provider" "github" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
+
   thumbprint_list = ["1c58a3a8518e8759bf075b76b750d4f2df264fcd"]
 }
 
@@ -19,11 +19,16 @@ resource "aws_iam_role" "github_actions_role" {
           Federated = aws_iam_openid_connect_provider.github.arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
-        
+
         Condition = {
           StringEquals = {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-            "token.actions.githubusercontent.com:sub" = "repo:ezequieldlv/mysstic-cloud-iac:ref:refs/heads/main"
+          }
+          StringLike = {
+            "token.actions.githubusercontent.com:sub" = [
+              "repo:ezequieldlv/mysstic-cloud-iac:ref:refs/heads/main",
+              "repo:ezequieldlv/portfolio-sre:ref:refs/heads/main"
+            ]
           }
         }
       }
@@ -32,13 +37,13 @@ resource "aws_iam_role" "github_actions_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "github_actions_admin_attach" {
-# checkov:skip=CKV_AWS_274: "AdminAccess temporal para bootstrapping. Protegido por OIDC estricto"
+  # checkov:skip=CKV_AWS_274: "AdminAccess temporal para bootstrapping. Protegido por OIDC estricto"
 
   role       = aws_iam_role.github_actions_role.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
 output "github_actions_role_arn" {
-  description = "ARN del rol de IAM que debes configurar en tu workflow de GitHub"
+  description = "ARN del rol de IAM a configurar en el workflow de GitHub"
   value       = aws_iam_role.github_actions_role.arn
 }
