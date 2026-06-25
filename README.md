@@ -49,7 +49,6 @@ graph TD
     end
 
     TF -->|Provisions via API| VPC[☁️ AWS Custom VPC 10.0.0.0/16]:::net
-    TF -->|Grants IAM Auth| EC2
 
     subgraph "AWS us-east-2 Ohio"
         Route53((🌐 Route 53)):::aws --> IGW
@@ -63,7 +62,15 @@ graph TD
 
         subgraph "Private Zone (The Vault)"
             EC2 -->|Port 5432 / SG Auth| RDS[(🐘 RDS PostgreSQL)]:::db
+            RDS -.-> PrivSub1[🔒 Subnet A 10.0.2.0/24]:::net
+            RDS -.-> PrivSub2[🔒 Subnet B 10.0.3.0/24]:::net
             SG2[🛡️ SG: EC2 Identity Only]:::net -.-> RDS
+        end
+
+        subgraph "Event-Driven Observability"
+            EC2 -.->|CPU Metrics| CW((👁️ CloudWatch Alarm)):::aws
+            CW -->|Triggers| SNS[📻 SNS Topic]:::aws
+            SNS -->|Invokes| Lambda[⚡ Lambda Python]:::serverless
         end
     end
 

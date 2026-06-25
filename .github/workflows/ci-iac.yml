@@ -96,6 +96,8 @@ jobs:
           sleep 90
 
       - name: 8. Ejecutar Ansible Playbook vía Tailscale SSH
+        env:
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: |
           export ANSIBLE_HOST_KEY_CHECKING=False
           export ANSIBLE_REMOTE_USER=admin

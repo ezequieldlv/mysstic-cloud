@@ -13,6 +13,12 @@
     dest: /opt/infra-web/docker-compose.yml
     mode: '0644'
 
+- name: Crear archivo .env para Docker Compose
+  ansible.builtin.copy:
+    dest: /opt/infra-web/.env
+    content: "AWS_ACCOUNT_ID={{ aws_account_id }}"
+    mode: '0600'
+
 - name: Desplegar contenedores (Traefik SSL Automático)
   community.docker.docker_compose_v2:
     project_src: /opt/infra-web
