@@ -6,5 +6,8 @@
 *.tfstate
 *.tfstate.*
 
+# --- SECRETS ---
+.env
+
 # Ignorar empaquetados de AWS Lambda
 *.zip

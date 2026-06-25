@@ -9,16 +9,16 @@ services:
     environment:
       - DOCKER_API_VERSION=1.41
     command:
-      - "--api.insecure=false" 
+      - "--api.insecure=false"
       - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false" 
-      
-      - "--entrypoints.web.address=:80"        
+      - "--providers.docker.exposedbydefault=false"
+
+      - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
 
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-      
+
       - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
       - "--certificatesresolvers.letsencrypt.acme.email=ezequiel2014.edlv@gmail.com"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
@@ -33,14 +33,14 @@ services:
   # BACKEND (La API)
   # =========================================
   backend-portfolio:
-    image: ghcr.io/ezequieldlv/ez-backend:latest
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com/portfolio-sre-backend:prod
     container_name: backend-portfolio
     restart: unless-stopped
     labels:
-      - "traefik.enable=true" 
-      
-      - "traefik.http.routers.backend.rule=Host(`api.ez-lab.site`)"
-      - "traefik.http.routers.backend.entrypoints=websecure" 
+      - "traefik.enable=true"
+
+      - "traefik.http.routers.backend.rule=Host(`api.ez-lab.site`) && PathPrefix(`/api/health`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
       - "traefik.http.services.backend.loadbalancer.server.port=8585"
 
@@ -48,14 +48,28 @@ services:
   # FRONTEND (La Web Visible)
   # =========================================
   frontend-portfolio:
-    image: ghcr.io/ezequieldlv/ez-frontend:latest
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-2.amazonaws.com/portfolio-sre-frontend:prod
     container_name: frontend-portfolio
     restart: unless-stopped
     depends_on:
-      - backend-portfolio 
+      - backend-portfolio
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`ez-lab.site`) || Host(`www.ez-lab.site`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
+
+  # =========================================
+  # WATCHTOWER (El Agente GitOps AWS)
+  # =========================================
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    environment:
+      - AWS_REGION=us-east-2
+      - WATCHTOWER_POLL_INTERVAL=300
+      - WATCHTOWER_CLEANUP=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro

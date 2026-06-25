@@ -23,6 +23,7 @@ The infrastructure is strictly modularized (Networking, Compute, Database, Monit
 * **Dynamic Secrets:** Passwords and tokens are never hardcoded or stored locally. Terraform extracts keys dynamically from **AWS Secrets Manager** at runtime.
 * **Event-Driven Observability:** Automated Chaos/Failure detection. **Amazon CloudWatch** monitors EC2 metrics and triggers an **Amazon SNS** topic. An **AWS Lambda** function pushes real-time critical alerts to a Telegram Bot.
 * **State Management:** Terraform state (`.tfstate`) is strictly managed via a **Remote Backend** using **Amazon S3** (AES-256 encryption) and **DynamoDB** for concurrent state locking.
+* **GitOps Pull Automation:** EC2 instances are granted IAM Instance Profiles to securely authenticate with ECR without static keys. A local Watchtower agent autonomously polls the registry and orchestrates zero-downtime rolling updates for the application containers.
 
 ## 🗺️ Cloud Topology
 
@@ -40,41 +41,33 @@ graph TD
     GitHub((🐙 GitHub Actions)):::cicd -->|1. OIDC Auth| IAM[AWS IAM Role]:::sec
     GitHub -->|2. Shift-Left| SecGates[Trufflehog & Checkov]:::sec
     SecGates -->|3. CD Pipeline| TF[🟪 Terraform CLI]:::tf
-    SecGates -->|4. Config| Ansible[🟥 Ansible Playbooks]:::cicd
-    
+    SecGates -->|4. Push App| ECR[(🐳 AWS ECR)]:::aws
+
     subgraph "Terraform Remote Backend"
         TF -.->|State Lock Mutex| Dynamo[(⚡ DynamoDB Table)]:::aws
         TF -.->|State Read/Write| S3[(🪣 S3 Bucket Encrypted)]:::aws
     end
 
     TF -->|Provisions via API| VPC[☁️ AWS Custom VPC 10.0.0.0/16]:::net
-    TF -->|Extracts Dynamic Keys| Vault[🔐 AWS Secrets Manager]:::sec
+    TF -->|Grants IAM Auth| EC2
 
     subgraph "AWS us-east-2 Ohio"
         Route53((🌐 Route 53)):::aws --> IGW
         VPC --> IGW[🚪 Internet Gateway]:::net
-        
+
         subgraph "Public Zone (DMZ)"
             IGW --> PubSub[🌐 Public Subnet 10.0.1.0/24]:::net
-            PubSub --> EC2[🖥️ t4g.micro Graviton]:::compute
+            PubSub --> EC2[🖥️ t4g.micro Graviton + Watchtower]:::compute
             PubSub --> SG1[🛡️ SG: HTTP/HTTPS]:::net
         end
 
         subgraph "Private Zone (The Vault)"
             EC2 -->|Port 5432 / SG Auth| RDS[(🐘 RDS PostgreSQL)]:::db
-            RDS -.-> PrivSub1[🔒 Subnet A 10.0.2.0/24]:::net
-            RDS -.-> PrivSub2[🔒 Subnet B 10.0.3.0/24]:::net
             SG2[🛡️ SG: EC2 Identity Only]:::net -.-> RDS
         end
-        
-        subgraph "Event-Driven Observability"
-            EC2 -.->|CPU Metrics| CW((👁️ CloudWatch Alarm)):::aws
-            CW -->|Triggers| SNS[📻 SNS Topic]:::aws
-            SNS -->|Invokes| Lambda[⚡ Lambda Python]:::serverless
-        end
     end
-    
-    Ansible -.->|Tailscale SSH| EC2
+
+    EC2 -.->|Autonomously Pulls| ECR
     Lambda -->|API POST| Telegram((📱 Telegram Bot)):::cicd
 ```
 
