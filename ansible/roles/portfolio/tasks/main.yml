@@ -16,7 +16,7 @@
 - name: Crear archivo .env para Docker Compose
   ansible.builtin.copy:
     dest: /opt/infra-web/.env
-    content: "AWS_ACCOUNT_ID={{ aws_account_id }}"
+    content: "AWS_ACCOUNT_ID={{ lookup('env', 'AWS_ACCOUNT_ID') }}"
     mode: '0600'
 
 - name: Desplegar contenedores (Traefik SSL Automático)
