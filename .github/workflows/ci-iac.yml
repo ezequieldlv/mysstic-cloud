@@ -14,6 +14,19 @@ permissions:
 
 jobs:
   # =====================================================================
+  # FASE 0: AUDITORÍA DE PIPELINE
+  # =====================================================================
+  workflow-lint:
+    name: Validar YAML del Pipeline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 🕵️‍♂️ Actionlint
+        uses: docker://rhysd/actionlint:latest
+        with:
+          args: -color
+          
+  # =====================================================================
   # FASE CI: SEGURIDAD Y AUDITORÍA
   # =====================================================================
   security-and-linting:
