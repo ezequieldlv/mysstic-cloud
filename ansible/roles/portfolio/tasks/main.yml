@@ -25,11 +25,6 @@
     update_cache: yes
   become: true
 
-- name: Autenticar el Docker local de la EC2 con AWS ECR
-  ansible.builtin.shell: |
-    aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin {{ lookup('env', 'AWS_ACCOUNT_ID') }}.dkr.ecr.us-east-2.amazonaws.com
-  changed_when: false
-
 - name: Desplegar contenedores (Traefik SSL Automático)
   community.docker.docker_compose_v2:
     project_src: /opt/infra-web
