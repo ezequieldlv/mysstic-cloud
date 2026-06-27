@@ -85,6 +85,13 @@ resource "aws_instance" "server" {
   associate_public_ip_address = true
   key_name                    = "mysstic-key"
 
+  # CONFIGURACIÓN DE SEGURIDAD EXTREMA E IDENTIDAD
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
+
   root_block_device {
     volume_size           = 8
     volume_type           = "gp2"

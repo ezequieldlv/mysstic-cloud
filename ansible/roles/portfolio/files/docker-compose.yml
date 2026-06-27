@@ -71,5 +71,6 @@ services:
       - AWS_REGION=us-east-2
       - WATCHTOWER_POLL_INTERVAL=300
       - WATCHTOWER_CLEANUP=true
+      - DOCKER_API_VERSION=1.40
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
