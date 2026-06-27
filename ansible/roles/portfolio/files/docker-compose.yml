@@ -74,4 +74,4 @@ services:
       - DOCKER_API_VERSION=1.40
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /root/.docker/config.json:/config.json:ro
+      - /opt/infra-web/ecr-cred.json:/config.json:ro
