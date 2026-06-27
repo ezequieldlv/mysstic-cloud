@@ -14,23 +14,32 @@ permissions:
 
 jobs:
   # =====================================================================
+  # FASE 0: AUDITORÍA DE PIPELINE (Meta-Seguridad)
+  # =====================================================================
+  workflow-lint:
+    name: Validar YAML del Pipeline
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Clonar el repositorio
+        uses: actions/checkout@v4
+
+      - name: 2. Validar sintaxis de GitHub Actions
+        uses: docker://rhysd/actionlint:latest
+        with:
+          args: -color
+
+  # =====================================================================
   # FASE CI: SEGURIDAD Y AUDITORÍA
   # =====================================================================
   security-and-linting:
     name: Escaneo Zero-Trust y Linting
     runs-on: ubuntu-latest
-
+    needs: workflow-lint
     steps:
       - name: 1. Clonar el repositorio
         uses: actions/checkout@v4
 
-      - name: 2. Autenticación Zero-Trust en AWS (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: us-east-2
-
-      - name: 3. Escaneo de Secretos (Trufflehog)
+      - name: 2. Escaneo de Secretos (Trufflehog)
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
@@ -38,7 +47,7 @@ jobs:
           head: ${{ github.sha }}
           extra_args: --debug --only-verified
 
-      - name: 4. Auditoría IaC (Checkov)
+      - name: 3. Auditoría IaC (Checkov)
         uses: bridgecrewio/checkov-action@master
         with:
           directory: .
@@ -78,7 +87,7 @@ jobs:
         run: |
           TS_KEY=$(aws secretsmanager get-secret-value --secret-id mysstic-core-secrets --query SecretString --output text | jq -r .tailscale_auth_key)
           echo "::add-mask::$TS_KEY"
-          echo "TS_AUTHKEY=$TS_KEY" >> $GITHUB_ENV
+          echo "TS_AUTHKEY=$TS_KEY" >> "$GITHUB_ENV"
 
       - name: 6. Conectar GitHub Runner a VPN Tailscale Zero-Trust
         uses: tailscale/github-action@v2
@@ -97,8 +106,8 @@ jobs:
 
       - name: 8. Ejecutar Ansible Playbook vía Tailscale SSH
         env:
-          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          AWS_ACCOUNT_ID: "${{ secrets.AWS_ACCOUNT_ID }}"
         run: |
           export ANSIBLE_HOST_KEY_CHECKING=False
           export ANSIBLE_REMOTE_USER=admin
-          ansible-playbook -i ansible/inventory/aws_ec2.yml ansible/site.yml
+          ansible-playbook -i ansible/inventory/aws_ec2.yml ansible/site.yml -e "aws_account_id=${AWS_ACCOUNT_ID}"
