@@ -75,3 +75,29 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /opt/infra-web/ecr-cred.json:/config.json:ro
+
+  # =========================================
+  # VAULTWARDEN (Gestor de Contraseñas Privado)
+  # =========================================
+  vaultwarden:
+    image: vaultwarden/server:1.32.0
+    container_name: vaultwarden
+    restart: unless-stopped
+    environment:
+      - AWS_REGION=us-east-2
+      - VT_LOG_LEVEL=info
+      - SIGNUPS_ALLOWED=false
+      - WEB_VAULT_ENABLED=true
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_ENDPOINT}:5432/myssticwarden
+    volumes:
+      - ./vaultwarden-data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vault.rule=Host(`vault.ez-lab.site`)"
+      - "traefik.http.routers.vault.entrypoints=websecure"
+      - "traefik.http.routers.vault.tls.certresolver=letsencrypt"
+      - "traefik.http.services.vault.loadbalancer.server.port=80"
+
+      # 🛡️ MIDDLEWARE DE SEGURIDAD: Solo permite acceso si estás conectado a Tailscale
+      - "traefik.http.routers.vault.middlewares=vault-whitelist"
+      - "traefik.http.middlewares.vault-whitelist.ipwhitelist.sourcerange=100.64.0.0/10"

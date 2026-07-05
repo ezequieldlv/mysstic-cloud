@@ -12,12 +12,6 @@
     dest: /opt/infra-web/docker-compose.yml
     mode: '0644'
 
-- name: Crear archivo .env para Docker Compose
-  ansible.builtin.copy:
-    dest: /opt/infra-web/.env
-    content: "AWS_ACCOUNT_ID={{ lookup('env', 'AWS_ACCOUNT_ID') }}"
-    mode: '0600'
-
 - name: Asegurar que el CLI de AWS esté instalado para el handshake
   ansible.builtin.apt:
     name: awscli
@@ -25,8 +19,36 @@
     update_cache: yes
   become: true
 
-- name: Desplegar contenedores (Traefik SSL Automático)
+- name: Recuperar credenciales de la base de datos desde AWS Secrets Manager
+  amazon.aws.aws_secret:
+    id: "mysstic-db-credentials"
+    region: "us-east-2"
+  register: db_secret_raw
+  become: false
+  delegate_to: localhost
+
+- name: Parsear credenciales del JSON cifrado
+  set_fact:
+    db_credentials: "{{ db_secret_raw.secret | from_json }}"
+
+- name: Obtener el Endpoint de la RDS generado por Terraform
+  shell: "terraform output -raw database_endpoint"
+  args:
+    chdir: "./terraform"
+  register: rds_endpoint_raw
+  delegate_to: localhost
+  changed_when: false
+
+- name: Asegurar que el archivo .env de producción tenga las credenciales dinámicas
+  template:
+    src: templates/env.j2
+    dest: /opt/infra-web/.env
+    mode: '0600'
+  become: true
+
+- name: Desplegar contenedores (Traefik + Portfolio + Vaultwarden)
   community.docker.docker_compose_v2:
     project_src: /opt/infra-web
     state: present
     pull: missing
+  become: true
