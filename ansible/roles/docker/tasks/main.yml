@@ -25,11 +25,11 @@
 - name: Agregar repositorio Docker
   ansible.builtin.deb822_repository:
     name: docker
-    types: [deb]
-    architectures: [arm64]
-    uris: [https://download.docker.com/linux/debian]
-    suites: ["{{ ansible_distribution_release }}"]
-    components: [stable]
+    types: deb
+    architectures: arm64
+    uris: https://download.docker.com/linux/debian
+    suites: "{{ ansible_distribution_release }}"
+    components: stable
     signed_by: /etc/apt/keyrings/docker.asc
     state: present
 
