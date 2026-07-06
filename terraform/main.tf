@@ -1,10 +1,10 @@
 terraform {
   backend "s3" {
-    bucket         = "mysstic-warden-tfstate-ez"
-    key            = "terraform/state/terraform.tfstate"
-    region         = "us-east-2"
-    encrypt        = true
-    dynamodb_table = "mysstic-terraform-locks"
+    bucket       = "mysstic-warden-tfstate-ez"
+    key          = "terraform/state/terraform.tfstate"
+    region       = "us-east-2"
+    encrypt      = true
+    use_lockfile = true
   }
   required_providers {
     aws = {

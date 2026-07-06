@@ -24,28 +24,6 @@ resource "aws_secretsmanager_secret_version" "db_secret_val" {
 }
 
 # ==========================================
-# 1.5. SECRETS MANAGER READ POLICY FOR EC2
-# ==========================================
-data "aws_iam_policy_document" "ec2_secrets_policy_doc" {
-  statement {
-    effect    = "Allow"
-    actions   = ["secretsmanager:GetSecretValue"]
-    resources = ["arn:aws:secretsmanager:*:*:secret:${var.project_name}-db-credentials-*"]
-  }
-}
-
-resource "aws_iam_policy" "ec2_secrets_policy" {
-  name        = "${var.project_name}-ec2-secrets-policy"
-  description = "Permitir que la EC2 lea de forma segura las credenciales de la RDS"
-  policy      = data.aws_iam_policy_document.ec2_secrets_policy_doc.json
-}
-
-resource "aws_iam_role_policy_attachment" "ec2_secrets_attach" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = aws_iam_policy.ec2_secrets_policy.arn
-}
-
-# ==========================================
 # 2. SUBNET GROUP & SECURITY GROUP
 # ==========================================
 resource "aws_db_subnet_group" "db_group" {
