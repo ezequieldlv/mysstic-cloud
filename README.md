@@ -18,11 +18,11 @@ The infrastructure is strictly modularized (Networking, Compute, Database, Monit
 * **Networking (Multi-AZ):** Custom VPC (`10.0.0.0/16`) divided into a Public DMZ (`10.0.1.0/24`) and fully isolated Private Subnets (`10.0.2.0/24`, `10.0.3.0/24`). DNS is managed natively via Amazon Route 53.
 * **Compute & Config Management:** Debian Linux running on an ARM64 Graviton instance (t4g.micro). Configuration is fully automated via **Ansible Enterprise Roles** (Docker, Traefik, Apps).
 * **Zero Trust VPN & Deployment:** EC2 does not expose SSH (Port 22) to the internet. The GitHub Actions runner dynamically joins the **Tailscale** private network using an ephemeral AuthKey and executes Ansible playbooks securely via the internal Tailnet.
-* **Persistence:** Amazon RDS (PostgreSQL 16) deployed exclusively within the Private Zone.
+* **Persistence(Self-Hosted Vault):** Amazon RDS (PostgreSQL 16) deployed exclusively within the Private Zone, acting as the stateful backend for the Vaultwarden password manager.
 * **Zero Trust Security Groups:** Default-deny inbound traffic. EC2 only allows HTTP/HTTPS. The RDS database denies IP-based connections, authenticating traffic cryptographically via the EC2's Security Group identity.
 * **Dynamic Secrets:** Passwords and tokens are never hardcoded or stored locally. Terraform extracts keys dynamically from **AWS Secrets Manager** at runtime.
 * **Event-Driven Observability:** Automated Chaos/Failure detection. **Amazon CloudWatch** monitors EC2 metrics and triggers an **Amazon SNS** topic. An **AWS Lambda** function pushes real-time critical alerts to a Telegram Bot.
-* **State Management:** Terraform state (`.tfstate`) is strictly managed via a **Remote Backend** using **Amazon S3** (AES-256 encryption) and **DynamoDB** for concurrent state locking.
+* **State Management:** Terraform state (`.tfstate`) is strictly managed via a **Remote Backend** using **Amazon S3** (AES-256 encryption) with native S3 state locking (use_lockfile = true).
 * **GitOps Pull Automation:** EC2 instances are granted IAM Instance Profiles to securely authenticate with ECR without static keys. A local Watchtower agent autonomously polls the registry and orchestrates zero-downtime rolling updates for the application containers.
 
 ## 🗺️ Cloud Topology
@@ -44,8 +44,7 @@ graph TD
     SecGates -->|4. Push App| ECR[(🐳 AWS ECR)]:::aws
 
     subgraph "Terraform Remote Backend"
-        TF -.->|State Lock Mutex| Dynamo[(⚡ DynamoDB Table)]:::aws
-        TF -.->|State Read/Write| S3[(🪣 S3 Bucket Encrypted)]:::aws
+        TF -.->|Native State Lock & Write| S3[(🪣 S3 Bucket Encrypted)]:::aws
     end
 
     TF -->|Provisions via API| VPC[☁️ AWS Custom VPC 10.0.0.0/16]:::net
@@ -57,14 +56,22 @@ graph TD
         subgraph "Public Zone (DMZ)"
             IGW --> PubSub[🌐 Public Subnet 10.0.1.0/24]:::net
             PubSub --> EC2[🖥️ t4g.micro Graviton + Watchtower]:::compute
+
+            subgraph "Docker Engine"
+                EC2 --- Traefik[Traefik Reverse Proxy]:::compute
+                Traefik -->|IP Whitelist| Vault[Vaultwarden App]:::compute
+                Traefik --> Portfolio[Portfolio App]:::compute
+            end
+
             PubSub --> SG1[🛡️ SG: HTTP/HTTPS]:::net
         end
 
         subgraph "Private Zone (The Vault)"
-            EC2 -->|Port 5432 / SG Auth| RDS[(🐘 RDS PostgreSQL)]:::db
+            Vault -->|Port 5432 / SG Auth| RDS[(🐘 RDS PostgreSQL)]:::db
             RDS -.-> PrivSub1[🔒 Subnet A 10.0.2.0/24]:::net
             RDS -.-> PrivSub2[🔒 Subnet B 10.0.3.0/24]:::net
             SG2[🛡️ SG: EC2 Identity Only]:::net -.-> RDS
+            Secrets[(🔑 AWS Secrets Manager)]:::sec -.->|Read via IAM| EC2
         end
 
         subgraph "Event-Driven Observability"
@@ -81,12 +88,12 @@ graph TD
 ## 🛠️ Tech Stack
 
 * **Provisioning:** Terraform (HashiCorp) - Modular Architecture
-* **Config Management:** Ansible (Roles structure)
+* **Config Management:** Ansible (Roles structure & Jinja2 Templates)
 * **Cloud Provider:** AWS (us-east-2)
 * **Database:** Amazon RDS (PostgreSQL)
 * **Serverless:** AWS Lambda, Amazon SNS, CloudWatch
 * **Security:** AWS Secrets Manager, IAM OIDC, Tailscale VPN, Checkov, Trufflehog
-* **State Backend:** AWS S3 + DynamoDB
+* **State Backend:** AWS S3 Native Locking
 * **CI/CD:** GitHub Actions
 * **OS:** Debian Linux
 

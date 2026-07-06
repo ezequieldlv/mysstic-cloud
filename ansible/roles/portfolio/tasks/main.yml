@@ -20,16 +20,15 @@
   become: true
 
 - name: Recuperar credenciales de la base de datos desde AWS Secrets Manager
-  amazon.aws.aws_secret:
-    id: "mysstic-db-credentials"
-    region: "us-east-2"
+  shell: "aws secretsmanager get-secret-value --secret-id mysstic-db-credentials --region us-east-2 --query SecretString --output text"
   register: db_secret_raw
-  become: false
   delegate_to: localhost
+  changed_when: false
+  become: false
 
 - name: Parsear credenciales del JSON cifrado
   set_fact:
-    db_credentials: "{{ db_secret_raw.secret | from_json }}"
+    db_credentials: "{{ db_secret_raw.stdout | from_json }}"
 
 - name: Obtener el Endpoint de la RDS generado por Terraform
   shell: "terraform output -raw database_endpoint"
