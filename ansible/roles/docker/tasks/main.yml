@@ -4,7 +4,7 @@
     name: [apt-transport-https, ca-certificates, curl, gnupg]
     state: present
     update_cache: yes
-    
+
 - name: Crear directorio keyrings
   ansible.builtin.file:
     path: /etc/apt/keyrings
@@ -23,10 +23,15 @@
   changed_when: false
 
 - name: Agregar repositorio Docker
-  ansible.builtin.apt_repository:
-    repo: "deb [arch={{ dpkg_arch.stdout }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: [deb]
+    architectures: [arm64]
+    uris: [https://download.docker.com/linux/debian]
+    suites: ["{{ ansible_distribution_release }}"]
+    components: [stable]
+    signed_by: /etc/apt/keyrings/docker.asc
     state: present
-    filename: docker
 
 - name: Instalar Docker y Compose
   ansible.builtin.apt:

@@ -110,4 +110,9 @@ jobs:
         run: |
           export ANSIBLE_HOST_KEY_CHECKING=False
           export ANSIBLE_REMOTE_USER=admin
+
+          # 1. Instalar dependencias de AWS para Ansible en el Runner
+          pip3 install boto3 botocore
+          ansible-galaxy collection install amazon.aws
+
           ansible-playbook -i ansible/inventory/aws_ec2.yml ansible/site.yml -e "aws_account_id=${AWS_ACCOUNT_ID}"
