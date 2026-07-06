@@ -85,8 +85,8 @@ jobs:
       - name: 4.5. Extraer Outputs de Terraform para Ansible
         working-directory: ./terraform
         run: |
-          DB_ENDPOINT=$(terraform output -raw database_endpoint)
-          echo "DB_ENDPOINT=$DB_ENDPOINT" >> $GITHUB_ENV
+          DB_ENDPOINT="$(terraform output -raw database_endpoint)"
+          echo "DB_ENDPOINT=$DB_ENDPOINT" >> "$GITHUB_ENV"
 
       - name: 5. Extraer Tailscale Auth Key de AWS Secrets Manager
         id: fetch-ts-key
