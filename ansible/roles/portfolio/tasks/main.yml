@@ -30,14 +30,6 @@
   set_fact:
     db_credentials: "{{ db_secret_raw.stdout | from_json }}"
 
-- name: Obtener el Endpoint de la RDS generado por Terraform
-  shell: "terraform output -raw database_endpoint"
-  args:
-    chdir: "{{ playbook_dir }}/../terraform"
-  register: rds_endpoint_raw
-  delegate_to: localhost
-  changed_when: false
-
 - name: Asegurar que el archivo .env de producción tenga las credenciales dinámicas
   template:
     src: templates/env.j2
