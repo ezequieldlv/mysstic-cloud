@@ -18,7 +18,7 @@ The infrastructure is strictly modularized (Networking, Compute, Database, Monit
 * **Networking (Multi-AZ):** Custom VPC (`10.0.0.0/16`) divided into a Public DMZ (`10.0.1.0/24`) and fully isolated Private Subnets (`10.0.2.0/24`, `10.0.3.0/24`). DNS is managed natively via Amazon Route 53.
 * **Compute & Config Management:** Debian Linux running on an ARM64 Graviton instance (t4g.micro). Configuration is fully automated via **Ansible Enterprise Roles** (Docker, Traefik, Apps).
 * **Zero Trust VPN & Deployment:** EC2 does not expose SSH (Port 22) to the internet. The GitHub Actions runner dynamically joins the **Tailscale** private network using an ephemeral AuthKey and executes Ansible playbooks securely via the internal Tailnet.
-* **Persistence(Self-Hosted Vault):** Amazon RDS (PostgreSQL 16) deployed exclusively within the Private Zone, acting as the stateful backend for the Vaultwarden password manager.
+* **Persistence (Self-Hosted Vault):** Amazon RDS (PostgreSQL 16) deployed exclusively within the Private Zone, acting as the stateful backend for the Vaultwarden password manager.
 * **Zero Trust Security Groups:** Default-deny inbound traffic. EC2 only allows HTTP/HTTPS. The RDS database denies IP-based connections, authenticating traffic cryptographically via the EC2's Security Group identity.
 * **Dynamic Secrets:** Passwords and tokens are never hardcoded or stored locally. Terraform extracts keys dynamically from **AWS Secrets Manager** at runtime.
 * **Event-Driven Observability:** Automated Chaos/Failure detection. **Amazon CloudWatch** monitors EC2 metrics and triggers an **Amazon SNS** topic. An **AWS Lambda** function pushes real-time critical alerts to a Telegram Bot.
