@@ -18,18 +18,22 @@ provider "aws" {
   region = "us-east-2"
 }
 
+locals {
+  project_name = "mysstic"
+}
+
 module "networking" {
   source       = "./modules/networking"
   vpc_cidr     = "10.0.0.0/16"
   environment  = "DevSecOps"
-  project_name = "mysstic"
+  project_name = local.project_name
 }
 
 module "compute" {
   source             = "./modules/compute"
   vpc_id             = module.networking.vpc_id
   public_subnet_id   = module.networking.public_subnet_id
-  project_name       = "mysstic"
+  project_name       = local.project_name
   tailscale_auth_key = local.core_secrets["tailscale_auth_key"]
 }
 
@@ -38,7 +42,7 @@ module "database" {
   vpc_id                = module.networking.vpc_id
   private_subnet_ids    = module.networking.private_subnet_ids
   ec2_security_group_id = module.compute.ec2_security_group_id
-  project_name          = "mysstic"
+  project_name          = local.project_name
 }
 
 module "dns" {
@@ -56,5 +60,5 @@ module "monitoring" {
 
 module "storage" {
   source       = "./modules/storage"
-  project_name = "mysstic"
+  project_name = local.project_name
 }

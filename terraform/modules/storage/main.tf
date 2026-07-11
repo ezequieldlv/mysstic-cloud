@@ -1,4 +1,9 @@
 resource "aws_s3_bucket" "logs_bucket" {
+  # checkov:skip=CKV_AWS_145: "Usamos cifrado AES-256 nativo de AWS, KMS es de pago (FinOps)"
+  # checkov:skip=CKV_AWS_18: "Access logging recursivo omitido para bucket de logs"
+  # checkov:skip=CKV_AWS_144: "Replicación Cross-Region omitida por costos (FinOps)"
+  # checkov:skip=CKV_AWS_21: "Versionado innecesario para logs inmutables"
+  # checkov:skip=CKV2_AWS_62: "Notificaciones de eventos no requeridas en esta fase"
   bucket = "${var.project_name}-security-logs"
 
   tags = {
