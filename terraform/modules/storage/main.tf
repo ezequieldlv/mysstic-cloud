@@ -52,6 +52,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "logs_lifecycle" {
     id     = "archive_and_delete_logs"
     status = "Enabled"
 
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+
     transition {
       days          = 30
       storage_class = "DEEP_ARCHIVE"
