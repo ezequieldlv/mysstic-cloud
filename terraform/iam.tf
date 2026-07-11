@@ -47,3 +47,16 @@ output "github_actions_role_arn" {
   description = "ARN del rol de IAM a configurar en el workflow de GitHub"
   value       = aws_iam_role.github_actions_role.arn
 }
+
+# ==========================================
+# AUDITORÍA CONTINUA (ZERO TRUST)
+# ==========================================
+resource "aws_accessanalyzer_analyzer" "account_analyzer" {
+  analyzer_name = "${local.project_name}-security-analyzer"
+  type          = "ACCOUNT"
+
+  tags = {
+    Name        = "${local.project_name}-iam-analyzer"
+    Environment = "DevSecOps"
+  }
+}
