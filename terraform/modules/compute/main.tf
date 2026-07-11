@@ -187,3 +187,15 @@ resource "aws_dlm_lifecycle_policy" "backup_policy" {
     }
   }
 }
+
+# ==========================================
+# 5. ELASTIC IP (EIP)
+# ==========================================
+resource "aws_eip" "server_ip" {
+  instance = aws_instance.server.id
+  domain   = "vpc"
+
+  tags = {
+    Name = "${var.project_name}-eip"
+  }
+}
