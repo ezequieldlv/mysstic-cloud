@@ -53,3 +53,8 @@ module "monitoring" {
   telegram_chat_id = local.core_secrets["telegram_chat_id"]
   ec2_instance_id  = module.compute.ec2_instance_id
 }
+
+module "storage" {
+  source       = "./modules/storage"
+  project_name = "mysstic"
+}
