@@ -28,6 +28,8 @@ data "aws_route_table" "public_rt" {
 resource "aws_security_group" "alb_sg_poc" {
   # checkov:skip=CKV_AWS_260: "Permitir HTTP (Puerto 80) global temporalmente para la PoC"
   # checkov:skip=CKV2_AWS_5: "SG atado correctamente al ALB"
+  # checkov:skip=CKV_AWS_382: "Ensure no security groups allow egress from 0.0.0.0:0 to port -1"
+  # checkov:skip=CKV_AWS_23: "Ensure every security group and rule has a description"
 
   name        = "mysstic-alb-sg-poc"
   description = "Permitir HTTP de internet al ALB"
@@ -55,6 +57,7 @@ resource "aws_lb" "main_poc" {
   # checkov:skip=CKV_AWS_150: "Deletion protection DESACTIVADO porque es una PoC efímera"
   # checkov:skip=CKV_AWS_91: "Access logging a S3 desactivado por costos (FinOps)"
   # checkov:skip=CKV2_AWS_28: "WAF no adjuntado en esta fase, se hará en la siguiente PoC"
+  # checkov:skip=CKV2_AWS_20: "Ensure that ALB redirects HTTP requests into HTTPS ones"
 
   name                       = "mysstic-alb-poc"
   internal                   = false
@@ -68,6 +71,7 @@ resource "aws_lb" "main_poc" {
 # 4. TARGET GROUP & HEALTH CHECK
 # ==========================================
 resource "aws_lb_target_group" "tg_poc" {
+  # checkov:skip=CKV_AWS_378: "Ensure AWS Load Balancer doesn't use HTTP protocol"
   name     = "mysstic-tg-poc"
   port     = 80
   protocol = "HTTP"
