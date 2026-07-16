@@ -22,8 +22,8 @@ data "aws_route_table" "public_rt" {
 resource "aws_security_group" "alb_sg_poc" {
   # checkov:skip=CKV_AWS_260: "Permitir HTTP temporalmente para la PoC"
   # checkov:skip=CKV2_AWS_5: "SG atado correctamente al ALB"
-  # checkov:skip=CKV2_AWS_382: "SG atado correctamente al ALB"
-  # checkov:skip=CKV2_AWS_23: "SG atado correctamente al ALB"
+  # checkov:skip=CKV_AWS_382: "SG atado correctamente al ALB"
+  # checkov:skip=CKV_AWS_23: "SG atado correctamente al ALB"
   name        = "mysstic-alb-sg-poc"
   description = "Permitir HTTP de internet al ALB"
   vpc_id      = module.networking.vpc_id
