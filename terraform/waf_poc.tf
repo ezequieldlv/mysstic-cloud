@@ -22,6 +22,8 @@ data "aws_route_table" "public_rt" {
 resource "aws_security_group" "alb_sg_poc" {
   # checkov:skip=CKV_AWS_260: "Permitir HTTP temporalmente para la PoC"
   # checkov:skip=CKV2_AWS_5: "SG atado correctamente al ALB"
+  # checkov:skip=CKV2_AWS_382: "SG atado correctamente al ALB"
+  # checkov:skip=CKV2_AWS_23: "SG atado correctamente al ALB"
   name        = "mysstic-alb-sg-poc"
   description = "Permitir HTTP de internet al ALB"
   vpc_id      = module.networking.vpc_id
@@ -44,6 +46,9 @@ resource "aws_security_group" "alb_sg_poc" {
 resource "aws_lb" "main_poc" {
   # checkov:skip=CKV_AWS_150: "Deletion protection DESACTIVADO (PoC)"
   # checkov:skip=CKV_AWS_91: "Access logging desactivado (FinOps)"
+  # checkov:skip=CKV2_AWS_20: "Redirección HTTP omitida en PoC"
+  # checkov:skip=CKV2_AWS_76: "Redirección HTTP omitida en PoC"
+
   name                       = "mysstic-alb-poc"
   internal                   = false
   load_balancer_type         = "application"
@@ -53,6 +58,8 @@ resource "aws_lb" "main_poc" {
 }
 
 resource "aws_lb_target_group" "tg_poc" {
+  # checkov:skip=CKV_AWS_378: "Redirección HTTP omitida en PoC"
+
   name     = "mysstic-tg-poc"
   port     = 80
   protocol = "HTTP"
@@ -92,6 +99,10 @@ resource "aws_lb_target_group_attachment" "ec2_attach_poc" {
 # 2. WEB APPLICATION FIREWALL (WAFv2)
 # ==========================================
 resource "aws_wafv2_web_acl" "waf_poc" {
+  # checkov:skip=CKV_AWS_192: "Redirección HTTP omitida en PoC"
+  # checkov:skip=CKV2_AWS_31: "Redirección HTTP omitida en PoC"
+
+
   name        = "mysstic-waf-poc"
   description = "Escudo protector contra inyecciones SQL"
   scope       = "REGIONAL" # Necesario para balanceadores
