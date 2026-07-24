@@ -70,8 +70,7 @@ jobs:
       - name: 2. Autenticación Zero-Trust en AWS (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          #role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          role-to-assume: arn:aws:iam::528733131843:role/mysstic-github-actions-role
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
 
       - name: 3. Configurar Terraform
