@@ -12,6 +12,12 @@
     dest: /opt/infra-web/docker-compose.yml
     mode: '0644'
 
+- name: Copiar configuración de Promtail
+  template:
+    src: promtail-config.yml.j2
+    dest: /opt/mysstic-stack/promtail-config.yml
+    mode: '0644'
+
 - name: Asegurar que el CLI de AWS esté instalado para el handshake
   ansible.builtin.apt:
     name: awscli
