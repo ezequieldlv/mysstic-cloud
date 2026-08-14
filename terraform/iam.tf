@@ -26,8 +26,9 @@ resource "aws_iam_role" "github_actions_role" {
           }
           StringLike = {
             "token.actions.githubusercontent.com:sub" = [
-              "repo:ezequieldlv/mysstic-cloud:*",
-              "repo:ezequieldlv/portfolio-sre:*"
+              "repo:ezequieldlv/mysstic-cloud:ref:refs/heads/main",
+              "repo:ezequieldlv/mysstic-cloud:pull_request",
+              "repo:ezequieldlv/portfolio-sre:ref:refs/heads/main"
             ]
           }
         }
