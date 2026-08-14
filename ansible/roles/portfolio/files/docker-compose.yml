@@ -22,6 +22,9 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
       - "--certificatesresolvers.letsencrypt.acme.email=ezequiel2014.edlv@gmail.com"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+
+      - "--accesslog=true"
+      - "--accesslog.format=json"
     ports:
       - "80:80"
       - "443:443"
