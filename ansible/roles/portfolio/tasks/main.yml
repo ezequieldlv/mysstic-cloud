@@ -43,6 +43,14 @@
     mode: '0600'
   become: true
 
+- name: 🌍 Descargar base de datos MaxMind GeoLite2 (Para Analytics)
+  ansible.builtin.get_url:
+    url: https://github.com/P3TERX/GeoLite.mmdb/raw/download/GeoLite2-City.mmdb
+    dest: /opt/infra-web/GeoLite2-City.mmdb
+    mode: '0644'
+    owner: admin
+    group: docker
+
 - name: Desplegar contenedores (Traefik + Portfolio + Vaultwarden)
   community.docker.docker_compose_v2:
     project_src: /opt/infra-web

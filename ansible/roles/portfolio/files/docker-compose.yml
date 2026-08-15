@@ -103,7 +103,7 @@ services:
 
       # 🛡️ MIDDLEWARE DE SEGURIDAD: Solo permite acceso si estás conectado a Tailscale
       - "traefik.http.routers.vault.middlewares=vault-whitelist"
-      - "traefik.http.middlewares.vault-whitelist.ipwhitelist.sourcerange=100.64.0.0/10"
+      - "traefik.http.middlewares.vault-whitelist.ipwhitelist.sourcerange=100.64.0.0/10,172.16.0.0/12"
 
   # ---------------------------------------------------
   # TELEMETRÍA SRE (MyssTic Sentinel Agents)
@@ -131,4 +131,5 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - ./promtail-config.yml:/etc/promtail/config.yml:ro
+      - ./GeoLite2-City.mmdb:/etc/promtail/GeoLite2-City.mmdb:ro
     command: -config.file=/etc/promtail/config.yml

@@ -14,3 +14,19 @@ scrape_configs:
       - source_labels: ["__meta_docker_container_name"]
         regex: "/(.*)"
         target_label: "container"
+
+    pipeline_stages:
+      - docker: {}
+      - match:
+          selector: '{container="traefik"}'
+          stages:
+            - json:
+                expressions:
+                  ClientHost: ClientHost
+            - geoip:
+                db: "/etc/promtail/GeoLite2-City.mmdb"
+                source: ClientHost
+                db_type: city
+            - labels:
+                geoip_country_name:
+                geoip_city_name:
